@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>EV Impact Calculator</title>
+    <title>EV vs Fuel Vehicle Calculator</title>
     <style>
-        /* Modern Color Scheme */
         :root {
             --primary: #2ecc71;
             --secondary: #3498db;
@@ -31,13 +30,15 @@
 
         .input-group {
             margin: 1.5rem 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
         }
 
         label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: var(--text);
         }
 
         input, select {
@@ -46,12 +47,6 @@
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--primary);
-            outline: none;
         }
 
         button {
@@ -63,235 +58,176 @@
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
-            transition: transform 0.1s ease;
+            margin-top: 1rem;
         }
 
-        button:active {
-            transform: scale(0.98);
-        }
-
-        .result-card {
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
             margin-top: 2rem;
+        }
+
+        .vehicle-card {
             padding: 1.5rem;
-            background: var(--background);
             border-radius: 8px;
+            background: var(--background);
         }
 
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.6rem;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .eco-impact {
+        .eco-badge {
             background: #e8f5e9;
             color: #2ecc71;
-            margin: 1rem 0;
             padding: 1rem;
             border-radius: 8px;
-        }
-
-        .comparison {
-            display: grid;
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .energy-mix {
-            display: flex;
-            gap: 1rem;
-            margin: 1rem 0;
-            padding: 1rem;
-            background: #f0f4f8;
-            border-radius: 8px;
-        }
-
-        .mix-item {
             text-align: center;
-            flex: 1;
+            margin-top: 1rem;
         }
     </style>
 </head>
 <body>
     <div class="calculator">
-        <h1>🚗 EV Impact Calculator</h1>
-        <p class="subtitle">Compare environmental and cost impacts of electric vehicles</p>
-
+        <h1>🔋⚡ Fuel vs EV Calculator</h1>
+        
         <div class="input-group">
-            <label for="kmInput">Monthly Driving Distance</label>
-            <input type="number" id="kmInput" placeholder="Enter kilometers" value="500" min="1">
-            <small>Typical monthly driving distance in kilometers</small>
+            <div>
+                <label for="kmInput">Monthly Distance (km)</label>
+                <input type="number" id="kmInput" value="1000" min="1">
+            </div>
+            
+            <div>
+                <label for="countrySelect">Region</label>
+                <select id="countrySelect">
+                    <option value="TN">Tamil Nadu</option>
+                    <option value="IN">India</option>
+                    <option value="US">USA</option>
+                    <option value="DE">Germany</option>
+                </select>
+            </div>
         </div>
 
         <div class="input-group">
-            <label for="countrySelect">Region</label>
-            <select id="countrySelect">
-                <option value="global">Global Average</option>
-                <option value="TN">Tamil Nadu</option>
-                <option value="IN">India</option>
-                <option value="US">United States</option>
-                <option value="DE">Germany</option>
-            </select>
+            <div>
+                <label for="evEfficiency">EV Efficiency (Wh/km)</label>
+                <input type="number" id="evEfficiency" value="150" min="50" max="300">
+            </div>
+            
+            <div>
+                <label for="elecCost">Electricity Cost (₹/kWh)</label>
+                <input type="number" id="elecCost" step="0.1" value="6.0">
+            </div>
         </div>
 
         <div class="input-group">
-            <label for="evEfficiency">EV Efficiency</label>
-            <input type="number" id="evEfficiency" 
-                   value="150" min="50" max="300" step="10">
-            <small>Energy consumption in Watt-hours per kilometer (lower is better)</small>
+            <div>
+                <label for="petrolEfficiency">Petrol Vehicle (km/l)</label>
+                <input type="number" id="petrolEfficiency" value="12" min="5" max="25">
+            </div>
+            
+            <div>
+                <label for="dieselEfficiency">Diesel Vehicle (km/l)</label>
+                <input type="number" id="dieselEfficiency" value="14" min="5" max="25">
+            </div>
         </div>
 
-        <button onclick="calculate()">Calculate Impact</button>
+        <button onclick="calculate()">Calculate Comparison</button>
 
         <div id="results" style="display: none;">
-            <!-- Energy Mix Visualization -->
-            <div class="energy-mix" id="energyMix"></div>
-
-            <!-- Main Results -->
-            <div class="result-card">
-                <h2>🌱 Your EV Impact</h2>
-                <div class="comparison">
-                    <div class="eco-impact">
-                        <div>CO₂ Reduction Equivalent</div>
-                        <div class="badge" id="treeImpact"></div>
-                    </div>
-                    
-                    <div>
-                        <h3>🔌 EV Consumption</h3>
-                        <p id="evOutput"></p>
-                    </div>
+            <div class="comparison-grid">
+                <div class="vehicle-card">
+                    <h3>⚡ Electric Vehicle</h3>
+                    <div id="evOutput"></div>
                 </div>
-
-                <!-- Cost Comparison -->
-                <div class="comparison">
-                    <div>
-                        <h3>⛽ Diesel Vehicle</h3>
-                        <p id="dieselOutput"></p>
-                    </div>
-                    
-                    <div>
-                        <h3>⛽ Petrol Vehicle</h3>
-                        <p id="petrolOutput"></p>
-                    </div>
+                
+                <div class="vehicle-card">
+                    <h3>⛽ Petrol Vehicle</h3>
+                    <div id="petrolOutput"></div>
+                </div>
+                
+                <div class="vehicle-card">
+                    <h3>⛽ Diesel Vehicle</h3>
+                    <div id="dieselOutput"></div>
                 </div>
             </div>
+
+            <div class="eco-badge" id="treeImpact"></div>
         </div>
     </div>
 
     <script>
-        // Energy Data (2023 estimates)
+        const FUEL_PRICES = {
+            TN: { diesel: 90, petrol: 100 },
+            IN: { diesel: 95, petrol: 105 },
+            US: { diesel: 1.2, petrol: 1.3 },
+            DE: { diesel: 1.8, petrol: 1.9 }
+        };
+
         const ENERGY_MIX = {
-            'global': { fossil: 60, renewable: 30, nuclear: 10 },
-            'TN': { fossil: 40, renewable: 50, nuclear: 10, color: '#f1c40f' },
-            'IN': { fossil: 75, renewable: 23, nuclear: 2, color: '#FF9933' },
-            'US': { fossil: 60, renewable: 21, nuclear: 19, color: '#3C3B6E' },
-            'DE': { fossil: 44, renewable: 44, nuclear: 12, color: '#000000' }
+            TN: { fossil: 40, renewable: 50, nuclear: 10 },
+            IN: { fossil: 75, renewable: 23, nuclear: 2 },
+            US: { fossil: 60, renewable: 21, nuclear: 19 },
+            DE: { fossil: 44, renewable: 44, nuclear: 12 }
         };
 
-        const PRICES = {
-            'global': { electricity: 0.12, diesel: 1.5, petrol: 1.6, currency: '$' },
-            'TN': { electricity: 6, diesel: 90, petrol: 100, currency: '₹' },
-            'IN': { electricity: 8, diesel: 95, petrol: 105, currency: '₹' },
-            'US': { electricity: 0.15, diesel: 1.2, petrol: 1.3, currency: '$' },
-            'DE': { electricity: 0.35, diesel: 1.8, petrol: 1.9, currency: '€' }
-        };
-
-        // Environmental Constants
         const CO2_FACTORS = {
-            fossil: 0.475,    // kg CO₂/kWh
-            renewable: 0.05   // kg CO₂/kWh
-        };
-
-        const VEHICLE_EFFICIENCY = {
-            diesel: 14,  // km/l
-            petrol: 12   // km/l
+            fossil: 0.475,
+            renewable: 0.05
         };
 
         function calculate() {
-            // Get user inputs
+            // User inputs
             const km = parseFloat(document.getElementById('kmInput').value);
             const region = document.getElementById('countrySelect').value;
             const whPerKm = parseFloat(document.getElementById('evEfficiency').value);
-            
-            // Energy calculations
+            const elecCost = parseFloat(document.getElementById('elecCost').value);
+            const petrolEff = parseFloat(document.getElementById('petrolEfficiency').value);
+            const dieselEff = parseFloat(document.getElementById('dieselEfficiency').value);
+
+            // Calculations
             const kwhPerKm = whPerKm / 1000;
-            const monthlyKwh = km * kwhPerKm;
-            
-            // Get regional data
+            const evKwh = km * kwhPerKm;
             const mix = ENERGY_MIX[region];
-            const prices = PRICES[region];
-            
-            // CO₂ Calculations
             const co2PerKwh = (mix.fossil * CO2_FACTORS.fossil + mix.renewable * CO2_FACTORS.renewable) / 100;
-            const evCo2 = monthlyKwh * co2PerKwh;
-            
-            // ICE Calculations
-            const dieselCo2 = (km / VEHICLE_EFFICIENCY.diesel) * 2.64;
-            const petrolCo2 = (km / VEHICLE_EFFICIENCY.petrol) * 2.31;
-            
-            // Cost Calculations
-            const evCost = monthlyKwh * prices.electricity;
-            const dieselCost = (km / VEHICLE_EFFICIENCY.diesel) * prices.diesel;
-            const petrolCost = (km / VEHICLE_EFFICIENCY.petrol) * prices.petrol;
+            const evCo2 = evKwh * co2PerKwh;
+            const evCost = evKwh * elecCost;
 
-            // Update Display
-            updateEnergyMix(mix);
-            updateResults({
-                ev: { co2: evCo2, cost: evCost, kwh: monthlyKwh },
-                diesel: { co2: dieselCo2, cost: dieselCost },
-                petrol: { co2: petrolCo2, cost: petrolCost },
-                prices,
-                region
-            });
-            
-            document.getElementById('results').style.display = 'block';
-        }
+            // Petrol calculations
+            const petrolCo2 = (km / petrolEff) * 2.31;
+            const petrolCost = (km / petrolEff) * FUEL_PRICES[region].petrol;
 
-        function updateEnergyMix(mix) {
-            const container = document.getElementById('energyMix');
-            container.innerHTML = `
-                <div class="mix-item" style="color: ${mix.color || '#27ae60'}">
-                    <h3>⚡ Energy Mix</h3>
-                    <div>${mix.renewable}% Renewable</div>
-                    <div>${mix.fossil}% Fossil</div>
-                    ${mix.nuclear ? `<div>${mix.nuclear}% Nuclear</div>` : ''}
-                </div>
-            `;
-        }
+            // Diesel calculations
+            const dieselCo2 = (km / dieselEff) * 2.64;
+            const dieselCost = (km / dieselEff) * FUEL_PRICES[region].diesel;
 
-        function updateResults({ ev, diesel, petrol, prices, region }) {
-            // EV Output
+            // Environmental impact
+            const avgCo2Reduction = ((petrolCo2 - evCo2) + (dieselCo2 - evCo2)) / 2;
+            const trees = Math.round(avgCo2Reduction / 20);
+
+            // Update display
             document.getElementById('evOutput').innerHTML = `
-                ${ev.kwh.toFixed(1)} kWh/mo<br>
-                ${ev.co2.toFixed(1)} kg CO₂<br>
-                Cost: ${prices.currency}${ev.cost.toFixed(2)}
-            `;
-
-            // Comparisons
-            document.getElementById('dieselOutput').innerHTML = `
-                ${diesel.co2.toFixed(1)} kg CO₂<br>
-                Cost: ${prices.currency}${diesel.cost.toFixed(2)}<br>
-                <span style="color: var(--primary)">
-                    Save ${prices.currency}${(diesel.cost - ev.cost).toFixed(2)}
-                </span>
+                <p>${evKwh.toFixed(1)} kWh/mo</p>
+                <p>₹${evCost.toFixed(2)}/mo</p>
+                <p>${evCo2.toFixed(1)} kg CO₂</p>
             `;
 
             document.getElementById('petrolOutput').innerHTML = `
-                ${petrol.co2.toFixed(1)} kg CO₂<br>
-                Cost: ${prices.currency}${petrol.cost.toFixed(2)}<br>
-                <span style="color: var(--primary)">
-                    Save ${prices.currency}${(petrol.cost - ev.cost).toFixed(2)}
-                </span>
+                <p>${(km/petrolEff).toFixed(1)} liters/mo</p>
+                <p>₹${petrolCost.toFixed(2)}/mo</p>
+                <p>${petrolCo2.toFixed(1)} kg CO₂</p>
             `;
 
-            // Tree Impact
-            const avgReduction = ((diesel.co2 - ev.co2) + (petrol.co2 - ev.co2)) / 2;
-            const trees = Math.round(avgReduction / 20); // 20kg CO₂/tree/year
-            document.getElementById('treeImpact').innerHTML = `
-                Like planting ${trees} trees 🌳<br>
-                <small>annually to offset emissions</small>
+            document.getElementById('dieselOutput').innerHTML = `
+                <p>${(km/dieselEff).toFixed(1)} liters/mo</p>
+                <p>₹${dieselCost.toFixed(2)}/mo</p>
+                <p>${dieselCo2.toFixed(1)} kg CO₂</p>
             `;
+
+            document.getElementById('treeImpact').innerHTML = `
+                <h3>🌳 Environmental Impact</h3>
+                <p>Equivalent to planting ${trees} trees annually</p>
+                <small>(1 tree offsets ~20kg CO₂/year)</small>
+            `;
+
+            document.getElementById('results').style.display = 'block';
         }
     </script>
 </body>
